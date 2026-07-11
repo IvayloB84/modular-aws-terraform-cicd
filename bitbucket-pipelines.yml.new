@@ -1,0 +1,104 @@
+image: ubuntu:latest
+
+pipelines:
+  branches:
+    develop:
+      - stage:
+          name: Deploy to Dev
+          deployment: dev
+          steps:
+            - step:
+                name: Backend Build
+                image: mcr.microsoft.com/dotnet/sdk:10.0
+                script:
+                  - apt-get update && apt-get install zip -y
+                  - cd ./Backend/Backend/Backend
+                  - dotnet publish -c Release
+                  - cd ./bin/Release/net10.0/publish
+                  - zip -r ../../../../deploy.zip *
+                artifacts:
+                  - Backend/Backend/Backend/deploy.zip
+            - step:
+                name: Frontend Build
+                image: node:18
+                script:
+                  - cd ./Frontend
+                  - npm install
+                  - node node_modules/@angular/cli/bin/ng build --aot --configuration=${ANGULAR_BUILD_ENV} --output-hashing=all
+                artifacts:
+                  - Frontend/dist/**
+            - step:
+                name: Backend Publish
+                services:
+                  - docker
+                script:
+                  - pipe: atlassian/aws-code-deploy:1.7.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                      COMMAND: 'upload'
+                      APPLICATION_NAME: ${CODE_DEPLOY_APPLICATION_NAME}
+                      S3_BUCKET: ${CODE_DEPLOY_S3_BUCKET}
+                      ZIP_FILE: 'Backend/Backend/Backend/deploy.zip'
+                  - pipe: atlassian/aws-code-deploy:1.7.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                      COMMAND: 'deploy'
+                      APPLICATION_NAME: ${CODE_DEPLOY_APPLICATION_NAME}
+                      DEPLOYMENT_GROUP: ${CODE_DEPLOY_DEPLOYMENT_GROUP}
+                      S3_BUCKET: ${CODE_DEPLOY_S3_BUCKET}
+                      IGNORE_APPLICATION_STOP_FAILURES: 'true'
+                      FILE_EXISTS_BEHAVIOR: 'OVERWRITE'
+                      WAIT: 'true'
+            - step: 
+                name: Frontend Publish
+                script:
+                  - pipe: atlassian/aws-s3-deploy:2.1.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                      EXTRA_ARGS: "--delete"
+                      S3_BUCKET: ${S3_BUCKET_FRONTEND}
+                      LOCAL_PATH: 'Frontend/dist'
+                  - pipe: atlassian/aws-cloudfront-invalidate:0.12.0
+                    variables:
+                      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+                      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+                      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION}
+                      DISTRIBUTION_ID: ${CLOUDFRONT_DISTRIBUTION_ID}
+
+  custom:
+    Run-Infrastructure-IaC:
+      - variables:
+          - name: ENVIRONMENT
+            default: DEV
+            allowed-values:
+              - DEV
+              - PROD
+          - name: ACTION
+            default: plan
+            allowed-values:
+              - plan
+              - apply
+      - step:
+          name: Terraform Execution Engine
+          image: hashicorp/terraform:latest
+          script:
+            - cd $ENVIRONMENT
+            - terraform init
+            - |
+              if [ "$ACTION" = "plan" ]; then
+                terraform plan
+              else
+                terraform apply -auto-approve
+              fi
+          condition:
+            changesets:
+              includePaths:
+                - "DEV/**"
+                - "PROD/**"
+                - "modules/**"
