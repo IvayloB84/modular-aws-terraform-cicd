@@ -1,2 +1,2 @@
-systemctl stop sis-web.service
+systemctl stop web.service
 

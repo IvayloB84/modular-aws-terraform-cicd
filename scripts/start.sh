@@ -1,1 +1,1 @@
-systemctl start sis-web.service
+systemctl start web.service

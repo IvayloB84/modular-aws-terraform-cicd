@@ -1,1 +1,1 @@
-rm -rf /wwwroot/sis-amexis/*
+rm -rf /path/*

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# export SITE_URL=api.sis.amexis.net
-# export EMAIL=ivaylo.bumbovski@amexis.net
+# export SITE_URL=""
+# export EMAIL=""
 
 ## Install, enable and start on boot nginx web-server
 # sudo dnf install nginx -y
