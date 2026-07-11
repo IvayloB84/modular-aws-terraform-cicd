@@ -1,0 +1,73 @@
+# ====================================================================
+# Application Runtime Data & Dependency Mappings
+# ====================================================================
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Testing and Coverage tracking
+lib-cov
+coverage
+.nyc_output
+
+# Task runner caches
+.grunt
+.lock-wscript
+.npm
+.node_repl_history
+
+# Compiled binary addons
+build/Release
+node_modules/
+jspm_packages/
+typings/
+
+# .NET Build Output Folders (Fixed to prevent pipeline compilation bugs)
+**/bin/
+**/obj/
+
+# ====================================================================
+# Infrastructure-as-Code (Terraform) Security Mappings
+# ====================================================================
+# Local .terraform internal directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+**/*.tfstate
+**/*.tfstate.*
+terraform.tfstate.d/
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files globally (RECURSIVE FIX: Safely blocks secrets in DEV and PROD folders)
+**/*.tfvars
+**/*.tfvars.json
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore generated execution plans
+*tfplan*
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore editor local recovery and backup streams
+*.bak
+.DS_Store
+.idea/
+.vscode/

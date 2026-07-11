@@ -1,0 +1,18 @@
+version: 0.0
+os: linux
+
+files:
+  - source: ./
+    destination: /Backend/Backend
+
+hooks:
+  ApplicationStop:
+    - location: scripts/stop.sh
+      timeout: 10
+      runas: root
+  BeforeInstall: 
+    - location: scripts/before_install.sh
+      runass: root
+  ApplicationStart:
+    - location: scripts/start.sh
+      runas: root
